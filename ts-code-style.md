@@ -4,7 +4,7 @@
 
 ## 格式与命名
 
-- 默认使用 Prettier 统一格式：2 空格缩进、单引号、分号、`printWidth: 100`；行宽是排版目标，不是强制拆分代码的依据。
+- 使用 Prettier 统一格式，本规范建议的项目默认配置为 2 空格缩进、`singleQuote: true`、`semi: true`、`printWidth: 100`；行宽是排版目标，不是强制拆分代码的依据。
 - 变量、参数、函数、方法和属性使用 `camelCase`；类型、接口、类和类型参数使用 `PascalCase`。
 - 模块级固定常量使用 `UPPER_SNAKE_CASE`，普通 `const` 绑定仍使用 `camelCase`，不将所有不可重新赋值的变量都命名为常量。
 - 缩写按单词参与驼峰命名，使用 `userId`、`parseUrl`、`HttpClient`；平台已有名称和外部协议字段保持原样。
@@ -157,12 +157,13 @@
   "compilerOptions": {
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true
   }
 }
 ```
 
-- 后两项不包含在 `strict` 开关中；存量项目按明确范围迁移，不以新增断言消除暴露的问题。
+- `noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`noImplicitOverride` 均不包含在 `strict` 开关中，需独立开启；存量项目按明确范围迁移，不以新增断言消除暴露的问题。
 - `target`、`lib`、`module`、`moduleResolution`、路径别名及 JSX 配置匹配实际运行与构建环境；不为 Node、浏览器和库发布复制同一套配置。
 - 默认使用 ESLint 与 typescript-eslint 的类型感知检查，以 `recommendedTypeChecked` 为起点，按工具版本配置 `projectService`；重点检查悬空 Promise、Promise 误用和不安全的 `any` 传播。
 - 格式交给单一格式器，类型与语义交给编译器和 linter；配置与兼容的工具版本纳入版本管理，不并行维护相互冲突的规则。
