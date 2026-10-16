@@ -40,14 +40,14 @@
 - 从属类型靠近对应主类型；同一 API 的相关类型按请求、成功响应、错误排列。
 - 同一职责内，调用者优先放在被调用者之前；主体辅助逻辑在前，简单末端工具在后。
 - 测试文件按导入、测试常量、测试用例、辅助函数排列，不在生产文件中放置测试。
-- 不为机械排序破坏代码内聚性、包初始化顺序或构建约束。
+- 上述阅读顺序以代码内聚性为先，不为机械排序破坏包初始化顺序或构建约束；业务初始化显式组织，避免依赖跨文件排列。
 
 参考：[Uber — Function Grouping and Ordering](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) · [Go Command — Build Constraints](https://pkg.go.dev/cmd/go#hdr-Build_constraints)
 
 ## 类型与 API 设计
 
 - 使用明确的结构体和命名类型表达数据；需要区分不同领域概念时，使用类型定义，而不是仅创建类型别名。
-- 状态使用命名类型和类型化常量；连续取值可用 `iota`，外部数值仍需校验，不假定编译器会穷举检查。
+- 状态使用命名类型和类型化常量；连续取值可用 `iota`，协议或持久化中的枚举值须保持稳定，优先显式指定，避免插入或重排改变旧值；外部数值仍需校验，不假定编译器会穷举检查。
 - 优先提供有意义的零值；需要建立不变量或注入依赖时使用构造函数。
 - 复用 `io.Reader`、`io.Writer`、`error` 等已有契约；不为相同语义另造接口。
 - 接口通常由使用方定义，只包含实际需要的方法；公共协议本身是产品时，可以在协议包定义接口。
@@ -56,6 +56,7 @@
 - 泛型用于真实的类型参数化需求；不以 `any`、反射或大量类型断言替代明确类型，也不为单一实现强加泛型。
 - 参数和返回值保持一致语义；简单查找可用 `(value, ok)`，需要说明失败原因时使用末尾的 `error` 返回值。
 - 配置结构体和 Functional Options 按实际构造需求使用，不为简单对象增加 Builder 或多层工厂。
+- 变更公开接口的方法、可识别的错误类别或序列化契约时，检查对现有调用方、实现方及存量数据的兼容性。
 
 参考：[Google Go Style Decisions — Interfaces](https://google.github.io/styleguide/go/decisions#interfaces) · [When To Use Generics](https://go.dev/blog/when-generics) · [Go Specification — Type Declarations](https://go.dev/ref/spec#Type_declarations)
 
@@ -79,7 +80,7 @@
 - 变量作用域保持最小，避免无意遮蔽外层变量，特别是需要后续读取的 `err`。
 - 能用零值、`range`、`append`、`copy` 和标准库直接表达的逻辑，不增加自定义包装。
 - 不先检查切片是否为 `nil` 再调用本来就支持 nil 切片的 `len`、`range` 或 `append`。
-- 仅在类型、构造过程或边界契约已可靠保证且持续有效时省略重复校验，不删除必要的权限和资源保护。
+- 在信任边界校验外部数据的长度、范围及整数转换的可表示性，读取或分配前落实资源上限；仅在约束已可靠建立且持续有效时省略重复校验，不删除必要的权限和资源保护。
 - 不通过默认值、无依据的类型转换或丢弃返回值掩盖错误与缺失数据。
 
 参考：[Effective Go — Control Structures](https://go.dev/doc/effective_go#control-structures) · [Go Specification — Built-in Functions](https://go.dev/ref/spec#Built-in_functions)
@@ -130,6 +131,7 @@
 - 文件、连接、响应体等资源明确归属；成功获取后及时安排清理，注意循环中的 `defer` 会延迟到函数返回。
 - 对影响结果的 `Flush`、`Close`、提交等错误进行处理；数据库结果迭代结束后检查 `Rows.Err()`。
 - HTTP 客户端、Transport 和数据库连接池按其生命周期复用，不在每次操作中重复创建。
+- `http.Client.Do` 不会仅因非 2xx 状态返回错误；收到响应后按接口契约检查状态码。
 - `sync.Pool` 仅用于可丢弃、可重建的临时对象，不承担持久缓存或对象生命周期管理。
 - 反射、`unsafe` 和复杂对象池必须有明确必要性；优化不得破坏类型安全、数据契约和资源上限。
 
@@ -138,10 +140,10 @@
 ## 注释与文档
 
 - 注释解释设计意图、关键约束和非显而易见的原因，不机械复述代码。
-- 导出的类型、函数、方法和包提供文档注释；声明注释通常以对应名称开头，包注释以 `Package <name>` 开头。
+- 导出的类型、函数、方法和包提供文档注释；声明注释通常以对应名称开头，普通包注释以 `Package <name>` 开头，命令包注释通常以程序名起句。
 - 公共接口说明必要的零值行为、错误条件、并发安全性、取消语义及资源归属。
 - 对不可复制的类型、共享切片或 map、特殊生命周期及 `unsafe` 使用前提明确说明。
-- 使用可运行的 `Example` 展示公共 API，保持注释、示例与实现同步，删除失效说明。
+- 为重要或易误用的公共 API 提供 `Example`；需要由 `go test` 执行验证时，包含 `Output:` 或 `Unordered output:` 注释，否则示例只编译、不执行；保持注释、示例与实现同步，删除失效说明。
 
 参考：[Go Doc Comments](https://go.dev/doc/comment) · [Google — Documentation](https://google.github.io/styleguide/go/best-practices#documentation)
 
@@ -174,7 +176,7 @@ go test -race ./...
 ```
 
 - CI 检查格式差异，不静默改写源码；使用 `gofmt -l` 时，还须判断输出是否为空及命令是否执行成功。
-- Go 版本、构建标签、cgo 与平台组合由项目确定；多模块仓库分别验证，不假定一次 `./...` 覆盖全部模块。
+- 语言特性和标准库 API 的使用须符合项目 `go.mod` 的 `go` 版本基线及支持矩阵；构建标签、cgo 与平台组合由项目确定，多模块仓库分别验证，不假定一次 `./...` 覆盖全部模块。
 - `goimports`、Staticcheck 等工具固定与项目工具链兼容的版本；按项目约定运行，不因升级而无依据禁用检查。
 - 规则例外限定到必要范围并说明原因；不通过删除断言、跳过测试或关闭检查换取通过。
 - 验证结果以实际执行为准；无法运行的检查说明原因和未验证范围。
