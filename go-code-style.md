@@ -143,16 +143,17 @@
 - 导出的类型、函数、方法和包提供文档注释；声明注释通常以对应名称开头，普通包注释以 `Package <name>` 开头，命令包注释通常以程序名起句。
 - 公共接口说明必要的零值行为、错误条件、并发安全性、取消语义及资源归属。
 - 对不可复制的类型、共享切片或 map、特殊生命周期及 `unsafe` 使用前提明确说明。
-- 为重要或易误用的公共 API 提供 `Example`；需要由 `go test` 执行验证时，包含 `Output:` 或 `Unordered output:` 注释，否则示例只编译、不执行；保持注释、示例与实现同步，删除失效说明。
+- 为重要或易误用的公共 API 提供 `Example`，按对应 API 归入同目录的 `_test.go` 文件并遵循 `Example` 命名约定；需要由 `go test` 执行验证时，包含 `Output:` 或 `Unordered output:` 注释，否则示例只编译、不执行；保持注释、示例与实现同步，删除失效说明。
 
 参考：[Go Doc Comments](https://go.dev/doc/comment) · [Google — Documentation](https://google.github.io/styleguide/go/best-practices#documentation)
 
 ## 测试与验证
 
-- 普通单元测试与源码同目录，默认 `foo.go` 对应 `foo_test.go`；同一源码的测试集中维护，平台、构建标签或独立测试包确有需要时再拆分。
+- 每个源码文件的单元测试必须与源码同目录且只保留一个对应文件：`foo.go` 对应 `foo_test.go`；同一源码的不同场景必须合并，不得另拆 `foo_internal_test.go` 等同源单元测试文件。
 - 包内测试使用同名包；仅通过公开 API 验证时可使用 `<package>_test`，不为测试随意扩大生产 API。
+- 跨组件或外部系统协作的集成测试必须放在项目 `test/` 目录，按同类场景归组。
 - 测试名称遵循 `TestXxx`、`BenchmarkXxx`、`FuzzXxx`、`ExampleXxx` 等约定，准确表达被测行为。
-- 多组输入与预期采用表驱动测试及 `t.Run`；复杂场景独立组织，不强行放入万能测试表。
+- 多组输入与预期采用表驱动测试及 `t.Run`；复杂场景使用独立测试函数，不强行放入万能测试表。
 - 测试辅助函数使用 `t.Helper()`；使用 `t.Cleanup()`、`t.TempDir()` 管理测试资源。
 - 失败信息说明场景、实际值与预期值；`t.Fatal`、`t.FailNow` 由测试 goroutine 调用，子 goroutine 的结果交回测试入口处理。
 - 仅在数据和资源互不干扰时使用 `t.Parallel()`；避免依赖遍历顺序、固定休眠或不受控的外部环境。
